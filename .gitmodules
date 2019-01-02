@@ -1,3 +1,6 @@
 [submodule "extras/ripple-libpp"]
 	path = extras/ripple-libpp
 	url = https://github.com/ripple/ripple-libpp.git
+[submodule "extras/rmc-libpp"]
+	path = extras/rmc-libpp
+	url = https://github.com/CryptoManiac/rmc-libpp

@@ -18,13 +18,13 @@
 */
 //==============================================================================
 
-#include <ValidatorKeys.h>
+#include "ValidatorKeys.h"
 #include <ripple/basics/StringUtilities.h>
 #include <ripple/json/json_reader.h>
 #include <ripple/json/to_string.h>
 #include <ripple/protocol/HashPrefix.h>
 #include <ripple/protocol/Sign.h>
-#include <beast/core/detail/base64.hpp>
+#include <boost/beast/core/detail/base64.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
 
@@ -34,32 +34,28 @@ std::string
 ValidatorToken::toString () const
 {
     Json::Value jv;
-    jv["validation_secret_key"] = strHex(secretKey.data(), secretKey.size());
+    jv["validation_secret_key"] = strHex(secretKey);
     jv["manifest"] = manifest;
 
-    return beast::detail::base64_encode(to_string(jv));
+    return boost::beast::detail::base64_encode(to_string(jv));
 }
 
-ValidatorKeys::ValidatorKeys (KeyType const& keyType)
-    : keyType_ (keyType)
-    , tokenSequence_ (0)
+ValidatorKeys::ValidatorKeys ()
+    : tokenSequence_ (0)
     , revoked_ (false)
 {
-    std::tie (publicKey_, secretKey_) = generateKeyPair (
-        keyType_, randomSeed ());
+    std::tie (publicKey_, secretKey_) = generateKeyPair (randomSeed ());
 }
 
 ValidatorKeys::ValidatorKeys (
-    KeyType const& keyType,
     SecretKey const& secretKey,
     std::uint32_t tokenSequence,
     bool revoked)
-    : keyType_ (keyType)
-    , secretKey_ (secretKey)
+    : secretKey_ (secretKey)
     , tokenSequence_ (tokenSequence)
     , revoked_ (revoked)
 {
-    publicKey_ = derivePublicKey(keyType_, secretKey_);
+    publicKey_ = derivePublicKey(secretKey_);
 }
 
 ValidatorKeys
@@ -80,8 +76,7 @@ ValidatorKeys::make_ValidatorKeys (
             "Unable to parse json key file: " + keyFile.string());
     }
 
-    static std::array<std::string, 4> const requiredFields {{
-        "key_type",
+    static std::array<std::string, 3> const requiredFields {{
         "secret_key",
         "token_sequence",
         "revoked"
@@ -97,17 +92,8 @@ ValidatorKeys::make_ValidatorKeys (
         }
     }
 
-    auto const keyType = keyTypeFromString (jKeys["key_type"].asString());
-    if (keyType == KeyType::invalid)
-    {
-        throw std::runtime_error (
-            "Key file '" + keyFile.string() +
-            "' contains invalid \"key_type\" field: " +
-            jKeys["key_type"].toStyledString());
-    }
-
     auto const secret = parseBase58<SecretKey> (
-        TokenType::TOKEN_NODE_PRIVATE, jKeys["secret_key"].asString());
+        TokenType::NodePrivate, jKeys["secret_key"].asString());
 
     if (! secret)
     {
@@ -139,7 +125,7 @@ ValidatorKeys::make_ValidatorKeys (
             jKeys["revoked"].toStyledString());
 
     return ValidatorKeys (
-        keyType, *secret, tokenSequence, jKeys["revoked"].asBool());
+        *secret, tokenSequence, jKeys["revoked"].asBool());
 }
 
 void
@@ -149,9 +135,8 @@ ValidatorKeys::writeToFile (
     using namespace boost::filesystem;
 
     Json::Value jv;
-    jv["key_type"] = to_string(keyType_);
-    jv["public_key"] = toBase58(TOKEN_NODE_PUBLIC, publicKey_);
-    jv["secret_key"] = toBase58(TOKEN_NODE_PRIVATE, secretKey_);
+    jv["public_key"] = toBase58(TokenType::NodePublic, publicKey_);
+    jv["secret_key"] = toBase58(TokenType::NodePrivate, secretKey_);
     jv["token_sequence"] = Json::UInt (tokenSequence_);
     jv["revoked"] = revoked_;
 
@@ -175,8 +160,7 @@ ValidatorKeys::writeToFile (
 }
 
 boost::optional<ValidatorToken>
-ValidatorKeys::createValidatorToken (
-    KeyType const& keyType)
+ValidatorKeys::createValidatorToken ()
 {
     if (revoked () ||
             std::numeric_limits<std::uint32_t>::max () - 1 <= tokenSequence_)
@@ -184,17 +168,17 @@ ValidatorKeys::createValidatorToken (
 
     ++tokenSequence_;
 
-    auto const tokenSecret = generateSecretKey (keyType, randomSeed ());
-    auto const tokenPublic = derivePublicKey(keyType, tokenSecret);
+    auto const tokenSecret = generateSecretKey (randomSeed ());
+    auto const tokenPublic = derivePublicKey(tokenSecret);
 
     STObject st(sfGeneric);
     st[sfSequence] = tokenSequence_;
     st[sfPublicKey] = publicKey_;
     st[sfSigningPubKey] = tokenPublic;
 
-    ripple::sign(st, HashPrefix::manifest, keyType, tokenSecret);
+    ripple::sign(st, HashPrefix::manifest, tokenSecret);
 
-    ripple::sign(st, HashPrefix::manifest, keyType_, secretKey_,
+    ripple::sign(st, HashPrefix::manifest, secretKey_,
         sfMasterSignature);
 
     Serializer s;
@@ -202,7 +186,7 @@ ValidatorKeys::createValidatorToken (
 
     std::string m (static_cast<char const*> (s.data()), s.size());
     return ValidatorToken {
-        beast::detail::base64_encode(m), tokenSecret };
+        boost::beast::detail::base64_encode(m), tokenSecret };
 }
 
 std::string
@@ -214,14 +198,14 @@ ValidatorKeys::revoke ()
     st[sfSequence] = std::numeric_limits<std::uint32_t>::max ();
     st[sfPublicKey] = publicKey_;
 
-    ripple::sign(st, HashPrefix::manifest, keyType_, secretKey_,
+    ripple::sign(st, HashPrefix::manifest, secretKey_,
         sfMasterSignature);
 
     Serializer s;
     st.add(s);
 
     std::string m (static_cast<char const*> (s.data()), s.size());
-    return beast::detail::base64_encode(m);
+    return boost::beast::detail::base64_encode(m);
 }
 
 std::string

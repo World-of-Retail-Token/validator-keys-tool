@@ -18,7 +18,6 @@
 */
 //==============================================================================
 
-#include <ripple/crypto/KeyType.h>
 #include <ripple/protocol/SecretKey.h>
 
 namespace boost
@@ -43,7 +42,6 @@ struct ValidatorToken
 class ValidatorKeys
 {
 private:
-    KeyType keyType_;
     PublicKey publicKey_;
     SecretKey secretKey_;
     std::uint32_t tokenSequence_;
@@ -51,11 +49,9 @@ private:
 
 public:
     explicit
-    ValidatorKeys (
-        KeyType const& keyType);
+    ValidatorKeys ();
 
     ValidatorKeys (
-        KeyType const& keyType,
         SecretKey const& secretKey,
         std::uint32_t sequence,
         bool revoked = false);
@@ -76,7 +72,6 @@ public:
     {
         // TODO Compare secretKey_
         return revoked_ == rhs.revoked_ &&
-            keyType_ == rhs.keyType_ &&
             tokenSequence_ == rhs.tokenSequence_ &&
             publicKey_ == rhs.publicKey_;
     }
@@ -93,11 +88,9 @@ public:
     writeToFile (boost::filesystem::path const& keyFile) const;
 
     /** Returns validator token for current sequence
-
-        @param keyType Key type for the token keys
     */
     boost::optional<ValidatorToken>
-    createValidatorToken (KeyType const& keyType = KeyType::secp256k1);
+    createValidatorToken ();
 
     /** Revokes validator keys
 

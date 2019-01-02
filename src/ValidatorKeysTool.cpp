@@ -18,8 +18,8 @@
 */
 //==============================================================================
 
-#include <ValidatorKeysTool.h>
-#include <ValidatorKeys.h>
+#include "ValidatorKeysTool.h"
+#include "ValidatorKeys.h"
 #include <ripple/beast/core/PlatformConfig.h>
 #include <ripple/beast/core/SemanticVersion.h>
 #include <ripple/beast/unit_test.h>
@@ -83,7 +83,7 @@ void createKeyFile (boost::filesystem::path const& keyFile)
             "Refusing to overwrite existing key file: " +
                 keyFile.string ());
 
-    ValidatorKeys const keys (KeyType::ed25519);
+    ValidatorKeys const keys;
     keys.writeToFile (keyFile);
 
     std::cout << "Validator keys stored in " <<
@@ -113,7 +113,7 @@ void createToken (boost::filesystem::path const& keyFile)
 
     std::cout << "Update rippled.cfg file with these values and restart rippled:\n\n";
     std::cout << "# validator public key: " <<
-        toBase58 (TOKEN_NODE_PUBLIC, keys.publicKey()) << "\n\n";
+        toBase58 (TokenType::NodePublic, keys.publicKey()) << "\n\n";
     std::cout << "[validator_token]\n";
 
     auto const tokenStr = token->toString();
@@ -142,7 +142,7 @@ void createRevocation (boost::filesystem::path const& keyFile)
 
     std::cout << "Update rippled.cfg file with these values and restart rippled:\n\n";
     std::cout << "# validator public key: " <<
-        toBase58 (TOKEN_NODE_PUBLIC, keys.publicKey()) << "\n\n";
+        toBase58 (TokenType::NodePublic, keys.publicKey()) << "\n\n";
     std::cout << "[validator_key_revocation]\n";
 
     auto const len = 72;
