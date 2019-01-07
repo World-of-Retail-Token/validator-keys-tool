@@ -170,6 +170,34 @@ void signData (std::string const& data,
     std::cout << std::endl;
 }
 
+void signList (std::string const& dataPath,
+    boost::filesystem::path const& keyFile)
+{
+    using namespace ripple;
+
+    if (dataPath.empty())
+        throw std::runtime_error (
+            "Syntax error: Must specify path to JSON file with UNL source data");
+
+    auto keys = ValidatorKeys::make_ValidatorKeys (keyFile);
+
+    if (keys.revoked())
+        std::cout << "WARNING: Validator keys have been revoked!\n\n";
+
+    auto result = keys.createUNL (dataPath);
+
+    if (! result)
+        throw std::runtime_error (
+            "Maximum number of lists have already been generated.\n"
+            "Revoke validator keys if previous token has been compromised.");
+
+    // Update key file with new token sequence
+    keys.writeToFile (keyFile);
+
+    std::cout << *result << std::endl;
+    std::cout << std::endl;
+}
+
 int runCommand (std::string const& command,
     std::vector <std::string> const& args,
     boost::filesystem::path const& keyFile)
@@ -180,7 +208,8 @@ int runCommand (std::string const& command,
         { "create_keys", 0 },
         { "create_token", 0 },
         { "revoke_keys", 0 },
-        { "sign", 1 }};
+        { "sign_data", 1 },
+        { "sign_list", 1 }};
 
     auto const iArgs = commandArgs.find (command);
 
@@ -196,8 +225,10 @@ int runCommand (std::string const& command,
         createToken (keyFile);
     else if (command == "revoke_keys")
         createRevocation (keyFile);
-    else if (command == "sign")
+    else if (command == "sign_data")
         signData (args[0], keyFile);
+    else if (command == "sign_list")
+        signList (args[0], keyFile);
 
     return 0;
 }
@@ -226,7 +257,8 @@ void printHelp (const boost::program_options::options_description& desc)
            "     create_keys        Generate validator keys.\n"
            "     create_token       Generate validator token.\n"
            "     revoke_keys        Revoke validator keys.\n"
-           "     sign <data>        Sign string with validator key.\n";
+           "     sign_data <data>   Sign string with validator key.\n"
+           "     sign_list <data>   Sign data with validator key and attach validator manifest to resulting signature.\n";
 }
 //LCOV_EXCL_STOP
 

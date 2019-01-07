@@ -92,6 +92,11 @@ public:
     boost::optional<ValidatorToken>
     createValidatorToken ();
 
+    /** Creates UNL from provided data
+    */
+    boost::optional<std::string>
+    createUNL(std::string const& dataPath);
+
     /** Revokes validator keys
 
         @return base64-encoded key revocation

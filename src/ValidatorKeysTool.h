@@ -45,6 +45,10 @@ void
 signData (std::string const& data,
     boost::filesystem::path const& keyFile);
 
+void
+signList (std::string const& data,
+    boost::filesystem::path const& keyFile);
+
 int
 runCommand (std::string const& command,
     std::vector <std::string> const& arg,
