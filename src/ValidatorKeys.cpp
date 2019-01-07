@@ -241,26 +241,26 @@ ValidatorKeys::createUNL (std::string const& dataPath)
     Serializer s;
     st.add(s);
 
-    std::string m (static_cast<char const*> (s.data()), s.size());
+    std::string manifest (static_cast<char const*> (s.data()), s.size());
 
     std::string vlBlob, vlStr;
 
     // Create blob to sign
-    Json::Value jvlB;
+    Json::Value jvToSign;
     int currTime = std::time(nullptr) - 946684800;
-    jvlB["sequence"] = tokenSequence_;
-    jvlB["expiration"] = currTime  + 7889238;
-    jvlB["validators"] = jValidators;
+    jvToSign["sequence"] = tokenSequence_;
+    jvToSign["expiration"] = currTime  + 7889238;
+    jvToSign["validators"] = jValidators;
 
-    vlBlob = boost::beast::detail::base64_encode(to_string(jvlB));
-    auto signature = strHex(ripple::sign (tokenPublic, tokenSecret, makeSlice (vlBlob)));
+    vlBlob = to_string(jvToSign);
+    auto signature = ripple::sign (tokenPublic, tokenSecret, makeSlice (vlBlob));
 
     // Pack the final list and serialize it
     Json::Value jvl;
     jvl["public_key"] = strHex(publicKey_);
-    jvl["manifest"] = boost::beast::detail::base64_encode(m);
-    jvl["blob"] = vlBlob;
-    jvl["signature"] = signature;
+    jvl["manifest"] = boost::beast::detail::base64_encode(manifest);
+    jvl["blob"] = boost::beast::detail::base64_encode(vlBlob);
+    jvl["signature"] = strHex(signature);
     jvl["version"] = 1;
 
     return to_string(jvl);
