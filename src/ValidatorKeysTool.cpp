@@ -325,7 +325,7 @@ int main (int argc, char** argv)
     std::string const defaultKeyFile =
         (homeDir.empty () ?
             boost::filesystem::current_path ().string () : homeDir) +
-        "/.ripple/validator-keys.json";
+        "/.rmc/validator-keys.json";
 
     try
     {
