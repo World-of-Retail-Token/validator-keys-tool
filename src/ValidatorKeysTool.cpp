@@ -357,7 +357,7 @@ int main (int argc, char** argv)
     std::string const defaultKeyFile =
         (homeDir.empty () ?
             boost::filesystem::current_path ().string () : homeDir) +
-        "/.rmc/validator-keys.json";
+        "/.wrt/validator-keys.json";
 
     try
     {
