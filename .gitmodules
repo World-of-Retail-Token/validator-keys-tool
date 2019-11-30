@@ -1,0 +1,3 @@
+[submodule "extras/wrt-libpp"]
+	path = extras/wrt-libpp
+	url = https://github.com/World-of-Retail-Token/wrt-libpp
