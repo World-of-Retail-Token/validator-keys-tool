@@ -22,9 +22,9 @@
 #include <ripple/basics/StringUtilities.h>
 #include <ripple/json/json_reader.h>
 #include <ripple/json/to_string.h>
+#include <ripple/basics/base64.h>
 #include <ripple/protocol/HashPrefix.h>
 #include <ripple/protocol/Sign.h>
-#include <boost/beast/core/detail/base64.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
 
@@ -36,15 +36,15 @@ ValidatorToken::toString () const
     Json::Value jv;
     jv["validation_secret_key"] = strHex(secretKey);
     jv["manifest"] = manifest;
-
-    return boost::beast::detail::base64_encode(to_string(jv));
+    
+    return base64_encode(to_string(jv));
 }
 
 ValidatorKeys::ValidatorKeys ()
     : tokenSequence_ (0)
     , revoked_ (false)
 {
-    std::tie (publicKey_, secretKey_) = generateKeyPair (randomSeed ());
+    std::tie (publicKey_, secretKey_) = generateKeyPair (randomSeed (), false);
 }
 
 ValidatorKeys::ValidatorKeys (
@@ -186,7 +186,7 @@ ValidatorKeys::createValidatorToken ()
 
     std::string m (static_cast<char const*> (s.data()), s.size());
     return ValidatorToken {
-        boost::beast::detail::base64_encode(m), tokenSecret };
+        base64_encode(m), tokenSecret };
 }
 
 boost::optional<std::string>
@@ -258,8 +258,8 @@ ValidatorKeys::createUNL (std::string const& dataPath)
     // Pack the final list and serialize it
     Json::Value jvl;
     jvl["public_key"] = strHex(publicKey_);
-    jvl["manifest"] = boost::beast::detail::base64_encode(manifest);
-    jvl["blob"] = boost::beast::detail::base64_encode(vlBlob);
+    jvl["manifest"] = base64_encode(manifest);
+    jvl["blob"] = base64_encode(vlBlob);
     jvl["signature"] = strHex(signature);
     jvl["version"] = 1;
 
@@ -282,7 +282,7 @@ ValidatorKeys::revoke ()
     st.add(s);
 
     std::string m (static_cast<char const*> (s.data()), s.size());
-    return boost::beast::detail::base64_encode(m);
+    return base64_encode(m);
 }
 
 std::string

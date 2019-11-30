@@ -1,0 +1,3 @@
+[submodule "extras/rmc-libpp"]
+	path = extras/rmc-libpp
+	url = https://github.com/CryptoManiac/rmc-libpp
